@@ -1,5 +1,5 @@
-Member1: Canh Nhat Minh Le
-Member2: 
+Member1: Canh Nhat Minh Le ()
+Member2: Gursmeep Singh Syan (301386570)
 
 Resources
 https://stackoverflow.com/questions/4204666/how-to-list-files-in-a-directory-in-a-c-program/17683417
