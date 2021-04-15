@@ -41,8 +41,10 @@ void cur_dirent_list(const char *dir, int signal)
     	if(signal == 0){
 	    printf("%s\n",dir_name);}
 	else if(signal == 1){
+      if( directory->d_name[0] != '.'){
 	    printf("%lu\t%s\n",directory->d_ino, dir_name);
 	    }
+      }
 	else if(signal == 2 && dir_name[0]!='.'){
 	    getFilePermission(dir_name);
 	    getAndPrintGroup(dir_name);
