@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include "secret_headers.h"
 void getAndPrintUserName(char* dir);
-#define MAXLINE 5000
+#define MAXLINE 100000
 char* date_time(const char *dir);
 long int findSize(const char *dir);
 int is_hidden(const char *name);
@@ -18,6 +18,9 @@ int countFiles(const char *dir);
 void sortNames(char *dir);
 int stringCompare(char *string1, char *string2);
 void getdino(const char *dir, char*name);
+void traverseRecursive(char *dir, int signal);
+void pathListing (char *dir, int signal);
+void pathListingR(char *dir, char *dname);
 void cur_dirent_list(const char *dir, int signal)
 {
     DIR *d = opendir(dir);
@@ -47,36 +50,89 @@ void cur_dirent_list(const char *dir, int signal)
 	    getAndPrintGroup(dir_name);
 	    getAndPrintUserName(dir_name);
 	    printf("%ld\t%s     %s\n",findSize(dir_name),date_time(dir_name),dir_name);
-	    } 
-       }
+	    }
      }
     closedir(d);
 }
+}
 
 
-void traverseRecursive(const char *dir){
+/*void sortTraverse(const char *dir){
+    struct dirent **directory; 
+    int n = scandir(dir,&directory, NULL, alphasort);
+    if(n<0){perror("scandir");}
+    
+    else{
+    for (int i =0; i < n; i++){
+      traverseRecursive(directory[i]->d_name); 
+      }
+    }
+}*/
+void traverseRecursive(char *dir, int signal){
     char *buffer = malloc(sizeof(char)*MAXLINE); 
     DIR *d; 
-    struct dirent *directory; 
-    d = opendir(dir); 
-    if(!d)
-    {
-    	//perror(dir);
-    	return;
+    struct dirent *directory;
+    d  = opendir(dir); 
+    if(!d){
+        printf("\n");
+    	return; 
     }
     while((directory = readdir(d))!=NULL){
     	if (directory->d_name[0]!='.')
     	{
-    	   printf("%s/%s\n",dir, directory->d_name); 
+    	   if(directory->d_type == DT_DIR)
+           {
+    	      printf("%s/%s: ",dir, directory->d_name); 
+    	   }
+    	   else{
+    	      if(signal == 5 || signal == 9){
+              printf("%lu\t", directory->d_ino); 
+    	      printf("%s  ", directory->d_name); 
+    	      }
+    	      else if(signal == 7){
+    	      getFilePermission(directory->d_name);
+	      getAndPrintGroup(directory->d_name);
+	      getAndPrintUserName(directory->d_name);
+	      printf("%ld\t%s\t%s\n",findSize(directory->d_name),date_time(directory->d_name),directory->d_name);
+	    	}
+	      else if(signal == 8){
+	      printf("%lu\t", directory->d_ino); 
+	      getFilePermission(directory->d_name);
+	      getAndPrintGroup(directory->d_name);
+	      getAndPrintUserName(directory->d_name);
+	      printf("%ld\t%s\t%s\n",findSize(directory->d_name),date_time(directory->d_name),directory->d_name);
+	      }
+	      else if(signal == 10){
+	      pathListingR(dir,directory->d_name);
+	      }
+	      else if(signal == 11){
+	      printf("%lu\t", directory->d_ino); 
+	      pathListingR(dir,directory->d_name);
+	      }
+    	      else{
+    	      	 printf("%s  ", directory->d_name); 
+    	      }
+    	   } 
     	   strcpy(buffer, dir); 
     	   strcat(buffer, "/"); 
     	   strcat(buffer,  directory->d_name);
-    	   traverseRecursive(buffer); 
+    	   printf("\n");
+    	   traverseRecursive(buffer, signal); 
     	  }
   	}
     closedir(d); 
 }
-    	
+void pathListingR(char *dir, char *dname){
+	char *buffnine = malloc(sizeof(char)*MAXLINE);
+	strcpy(buffnine,dir);
+	strcat(buffnine,"/");
+	strcat(buffnine, dname); 
+    	getFilePermission(buffnine);
+	getAndPrintGroup(buffnine);
+	getAndPrintUserName(buffnine);
+	printf("%ld\t%s\t%s\n",findSize(buffnine),date_time(buffnine),dname);
+}
+
 void pathListing (char *dir, int signal){
     DIR *d = opendir(dir);
     struct dirent *directory;
@@ -99,10 +155,10 @@ void pathListing (char *dir, int signal){
 	    getAndPrintUserName(buffer);
 	    printf("%ld\t%s     %s\n",findSize(buffer),date_time(buffer),directory->d_name);
          } 
-         
       } 
      closedir(d);
 }
+
 
 void singleNameListing(char *dir, int signal){
   struct stat attrib; 
@@ -266,34 +322,48 @@ int main (int argc, char *argv[]){
     }
     else if (argc == 2)
     {
-	if (argv[1][0] == '-'&& strlen(argv[1]) == 2){
-		if(argv[1][1] == 'i'){
+
+	if (strlen(argv[1]) == 2){
+		if(strcmp(argv[1],"-i")==0){
 		   signal = 1; 
 		   cur_dirent_list(".",signal);
 		}
-		else if (argv[1][1] == 'l'){
+		else if (strcmp(argv[1],"-l")==0){
 		   signal = 2;
 		   cur_dirent_list(".",signal);
 		}
-		else if (argv[1][1] == 'R'){
-		   traverseRecursive("/home/john");
+		else if (strcmp(argv[1],"-R")==0){
+		   signal = 6; 
+		   traverseRecursive(".", signal);
 		}
     	}
-    	else if(argv[1][0] == '-' && strlen(argv[1]) == 3){
-    		if(argv[1][1] =='i' && argv[1][2] =='l'){
+    	else if(strlen(argv[1]) >= 3){
+    		if(strcmp(argv[1],"-il")==0){
 		   signal = 3;
 		   cur_dirent_list(".",signal); 
 		}
-		else if(argv[1][1] =='l' && argv[1][2] =='i'){
+		else if(strcmp(argv[1],"-li")==0){
 		   signal = 4;
 		   cur_dirent_list(".",signal); 
-		}  
+		}
+		else if(strcmp(argv[1],"-iR")==0 ||strcmp(argv[1],"-Ri")==0 ){
+		   signal = 5; 
+		   traverseRecursive(".", signal);
+		}
+		else if(strcmp(argv[1],"-lR")==0 ||strcmp(argv[1],"-Rl")==0 ){
+		   signal = 7; 
+		   traverseRecursive(".", signal);
+		} 
+		else if(strcmp(argv[1],"-ilR")==0 ||strcmp(argv[1],"-iRl")==0 || strcmp(argv[1],"-Ril")==0 || strcmp(argv[1],"-Rli")==0 || strcmp(argv[1],"-liR")==0 || strcmp(argv[1],"-lRi")==0){
+		   signal = 8; 
+		   traverseRecursive(".", signal);
+		}   
     	}
     	else{
     	    char *buf = malloc(sizeof(char)*MAXLINE);
     	    strcpy(buf, argv[1]); 
     	    cur_dirent_list(buf,signal); 
-    	}
+    	    }
     }
     else if(argc == 3)
     {
@@ -313,17 +383,34 @@ int main (int argc, char *argv[]){
 	    signal =2;
 	    pathListing(buf, signal); 
 	}
-	else if (strcmp(buf2,"-il") == 0)
+	else if (strcmp(buf2, "-R")==0){
+	    signal = 6; 
+	    traverseRecursive(buf, signal); 
+	}
+	else if (strcmp(buf2,"-il") == 0 || strcmp(buf2,"-li") == 0)
 	{
 	   signal =3; 
 	   pathListing(buf, signal); 
 	}
-	else if (strcmp(buf2,"-li") == 0)
-	{
+	else if (strcmp(buf2,"-iR")==0 || strcmp(buf2, "-Ri")==0){
+	   signal = 9;
+	   traverseRecursive(buf, signal); 
+	}
+	else if(strcmp(buf2,"-lR")==0 || strcmp(buf2, "-Rl")==0){
+	   signal = 10; 
+	   traverseRecursive(buf, signal); 
+	}
+	else if(strcmp(argv[1],"-ilR")==0 ||strcmp(argv[1],"-iRl")==0 || strcmp(argv[1],"-Ril")==0 || strcmp(argv[1],"-Rli")==0 || strcmp(argv[1],"-liR")==0 || strcmp(argv[1],"-lRi")==0){
+	   signal = 11; 
+	}
+	
+	/*else if (strcmp(buf2,"-li") == 0)
+	  {
 	   signal =3; 
 	   pathListing(buf, signal); 
+	  }*/
 	}
-	}
+	
 	else{
 	    if (strcmp(buf2,"-i") == 0){
     	   signal =1;
@@ -342,18 +429,4 @@ int main (int argc, char *argv[]){
 	  }
      }
  }               
- 
- 
-  /* struct dirent **directory;
-    int n = scandir("/home/john", &directory, NULL, alphasort); 
-    if(n < 0){perror("scandir");}
-    else
-    {
-    	for(int i = 0; i < n; i++){
-    	if(signal == 0){
-	    printf("%s\n",directory[i]->d_name);
-	    free(directory[i]);
-	    }
-    	}
-    }*/
-    //free(directory);                                                           
+
