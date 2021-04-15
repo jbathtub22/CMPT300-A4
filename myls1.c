@@ -21,13 +21,13 @@ void getdino(const char *dir, char*name);
 void cur_dirent_list(const char *dir, int signal)
 {
 
-  struct dirent **dirlist;
+  /*struct dirent **dirlist;
   int n;
   n=scandir(&dir,&dirlist,0,alphasort);
   if (n == -1){
       printf("Error reading the directory\n");
       exit(1);
-  }
+  }*/
     DIR *d = opendir(dir);
     struct dirent *directory;
     if (!d){
@@ -343,15 +343,15 @@ int main (int argc, char *argv[]){
       }
 
     int signalI ,signalL ,signalR , nonOption ;
-    for(int i = 1; *argv[i]!=NULL;i++){
+    for(int i = 1; argv[i]!=NULL;i++){
         // case of the not an option i.e doesnt have '-'
-        if((*args[i])[0]!='-'){
+        if((argv[i])[0]!='-'){
              nonOption = i;
         }
         else {
             int j = 1;
-            while(j < strlen(*args[i])) {
-                char x = (*args[i])[j];
+            while(j < strlen(argv[i])) {
+                char x = (argv[i])[j];
                 if (x =='i') {
                     signalI = 1;
                 } else if (x == 'l') {
