@@ -18,7 +18,7 @@ int countFiles(const char *dir);
 void sortNames(char *dir);
 int stringCompare(char *string1, char *string2);
 void getdino(const char *dir, char*name);
-void traverseRecursive(char *dir, int signal);
+void reccurFunc(char *dir, int signal);
 void pathListing (char *dir, int signal);
 void pathListingR(char *dir, char *dname);
 void cur_dirent_list(const char *dir, int signal)
@@ -64,27 +64,37 @@ void cur_dirent_list(const char *dir, int signal)
     
     else{
     for (int i =0; i < n; i++){
-      traverseRecursive(directory[i]->d_name); 
+      reccurFunc(directory[i]->d_name); 
       }
     }
 }*/
-void traverseRecursive(char *dir, int signal){
+void reccurFunc(char *dir, int signal){
     char *buffer = malloc(sizeof(char)*MAXLINE); 
-    DIR *d; 
+    /*DIR *d; 
     struct dirent *directory;
     d  = opendir(dir); 
     if(!d){
         printf("\n");
     	return; 
-    }
-    while((directory = readdir(d))!=NULL){
+    }*/
+	struct dirent **dirr;
+	int n = scandir(dir,&dirr, NULL, alphasort);
+	if(n<0){perror("scandir");}
+	int i =0;
+	while(i<n){
+
+		struct dirent *directory = dirr[i]; 
+    //while((directory = readdir(d))!=NULL){
+	
     	if (directory->d_name[0]!='.')
     	{
+			int isDir = 0;
     	   if(directory->d_type == DT_DIR)
            {
-    	      printf("%s/%s: ",dir, directory->d_name); 
+    	      //printf("%s/%s: ",dir, directory->d_name); 
+			  isDir = 1;
     	   }
-    	   else{
+    	   //else{
     	      if(signal == 5 || signal == 9){
               printf("%lu\t", directory->d_ino); 
     	      printf("%s  ", directory->d_name); 
@@ -112,15 +122,23 @@ void traverseRecursive(char *dir, int signal){
     	      else{
     	      	 printf("%s  ", directory->d_name); 
     	      }
-    	   } 
-    	   strcpy(buffer, dir); 
-    	   strcat(buffer, "/"); 
-    	   strcat(buffer,  directory->d_name);
-    	   printf("\n");
-    	   traverseRecursive(buffer, signal); 
+    	   //} 
+		   if(isDir == 1){
+			   printf("%s/%s: ",dir, directory->d_name);
+    	   		strcpy(buffer, dir); 
+    	   		strcat(buffer, "/"); 
+    	   		strcat(buffer,  directory->d_name);
+    	   		printf("\n");
+				reccurFunc(buffer, signal); 
+    	   		
+		   }
     	  }
+		  
+		  i++;
   	}
-    closedir(d); 
+    //closedir(d);
+	free(buffer);
+	free(dirr);
 }
 void pathListingR(char *dir, char *dname){
 	char *buffnine = malloc(sizeof(char)*MAXLINE);
@@ -334,7 +352,7 @@ int main (int argc, char *argv[]){
 		}
 		else if (strcmp(argv[1],"-R")==0){
 		   signal = 6; 
-		   traverseRecursive(".", signal);
+		   reccurFunc(".", signal);
 		}
     	}
     	else if(strlen(argv[1]) >= 3){
@@ -348,15 +366,15 @@ int main (int argc, char *argv[]){
 		}
 		else if(strcmp(argv[1],"-iR")==0 ||strcmp(argv[1],"-Ri")==0 ){
 		   signal = 5; 
-		   traverseRecursive(".", signal);
+		   reccurFunc(".", signal);
 		}
 		else if(strcmp(argv[1],"-lR")==0 ||strcmp(argv[1],"-Rl")==0 ){
 		   signal = 7; 
-		   traverseRecursive(".", signal);
+		   reccurFunc(".", signal);
 		} 
 		else if(strcmp(argv[1],"-ilR")==0 ||strcmp(argv[1],"-iRl")==0 || strcmp(argv[1],"-Ril")==0 || strcmp(argv[1],"-Rli")==0 || strcmp(argv[1],"-liR")==0 || strcmp(argv[1],"-lRi")==0){
 		   signal = 8; 
-		   traverseRecursive(".", signal);
+		   reccurFunc(".", signal);
 		}   
     	}
     	else{
@@ -385,7 +403,7 @@ int main (int argc, char *argv[]){
 	}
 	else if (strcmp(buf2, "-R")==0){
 	    signal = 6; 
-	    traverseRecursive(buf, signal); 
+	    reccurFunc(buf, signal); 
 	}
 	else if (strcmp(buf2,"-il") == 0 || strcmp(buf2,"-li") == 0)
 	{
@@ -394,11 +412,11 @@ int main (int argc, char *argv[]){
 	}
 	else if (strcmp(buf2,"-iR")==0 || strcmp(buf2, "-Ri")==0){
 	   signal = 9;
-	   traverseRecursive(buf, signal); 
+	   reccurFunc(buf, signal); 
 	}
 	else if(strcmp(buf2,"-lR")==0 || strcmp(buf2, "-Rl")==0){
 	   signal = 10; 
-	   traverseRecursive(buf, signal); 
+	   reccurFunc(buf, signal); 
 	}
 	else if(strcmp(argv[1],"-ilR")==0 ||strcmp(argv[1],"-iRl")==0 || strcmp(argv[1],"-Ril")==0 || strcmp(argv[1],"-Rli")==0 || strcmp(argv[1],"-liR")==0 || strcmp(argv[1],"-lRi")==0){
 	   signal = 11; 
