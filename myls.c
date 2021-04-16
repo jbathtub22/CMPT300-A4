@@ -82,28 +82,27 @@ void reccurFunc(char *dir, int signal){
 	if(n<0){perror("scandir");}
 	int i =0;
 	while(i<n){
-
-		struct dirent *directory = dirr[i]; 
+	struct dirent *directory = dirr[i]; 
     //while((directory = readdir(d))!=NULL){
-	
     	if (directory->d_name[0]!='.')
     	{
 			int isDir = 0;
     	   if(directory->d_type == DT_DIR)
            {
-    	      //printf("%s/%s: ",dir, directory->d_name); 
 			  isDir = 1;
     	   }
     	   //else{
     	      if(signal == 5 || signal == 9){
               printf("%lu\t", directory->d_ino); 
-    	      printf("%s  ", directory->d_name); 
+    	      printf("%s\n ", directory->d_name); 
     	      }
     	      else if(signal == 7){
+    	      
     	      getFilePermission(directory->d_name);
 	      getAndPrintGroup(directory->d_name);
 	      getAndPrintUserName(directory->d_name);
 	      printf("%ld\t%s\t%s\n",findSize(directory->d_name),date_time(directory->d_name),directory->d_name);
+	    	  
 	    	}
 	      else if(signal == 8){
 	      printf("%lu\t", directory->d_ino); 
@@ -113,29 +112,39 @@ void reccurFunc(char *dir, int signal){
 	      printf("%ld\t%s\t%s\n",findSize(directory->d_name),date_time(directory->d_name),directory->d_name);
 	      }
 	      else if(signal == 10){
+	      if (isDir ==1){
+    	      	 printf("%s/%s: ",dir, directory->d_name);}
+    	      else{
 	      pathListingR(dir,directory->d_name);
+	      }
 	      }
 	      else if(signal == 11){
+	      if (isDir ==1){
+    	      	 printf("%s/%s: ",dir, directory->d_name);}
+    	      else{
 	      printf("%lu\t", directory->d_ino); 
 	      pathListingR(dir,directory->d_name);
+	          }
 	      }
-    	      else{
+    	      else {
+    	      	 if (isDir ==1){
+    	      	 printf("%s/%s: ",dir, directory->d_name);}
+    	      	 else{
     	      	 printf("%s  ", directory->d_name); 
+    	      	 printf("\n");}
     	      }
     	   //} 
-		   if(isDir == 1){
-			   printf("%s/%s: ",dir, directory->d_name);
+	      if(isDir == 1){
+			//printf("%s/%s: ",dir, directory->d_name);
     	   		strcpy(buffer, dir); 
     	   		strcat(buffer, "/"); 
     	   		strcat(buffer,  directory->d_name);
     	   		printf("\n");
-				reccurFunc(buffer, signal); 
-    	   		
-		   }
-    	  }
-		  
+			reccurFunc(buffer, signal); 
+	       }
+    	  }	
 		  i++;
-  	}
+     }
     //closedir(d);
 	free(buffer);
 	free(dirr);
@@ -341,7 +350,7 @@ int main (int argc, char *argv[]){
     else if (argc == 2)
     {
 
-	if (strlen(argv[1]) == 2){
+	if (strlen(argv[1]) == 2 && strcmp(argv[1],"..") != 0 ){
 		if(strcmp(argv[1],"-i")==0){
 		   signal = 1; 
 		   cur_dirent_list(".",signal);
@@ -355,7 +364,7 @@ int main (int argc, char *argv[]){
 		   reccurFunc(".", signal);
 		}
     	}
-    	else if(strlen(argv[1]) >= 3){
+    	else if(strlen(argv[1]) == 3 || strlen(argv[1]) == 4){
     		if(strcmp(argv[1],"-il")==0){
 		   signal = 3;
 		   cur_dirent_list(".",signal); 
@@ -378,9 +387,9 @@ int main (int argc, char *argv[]){
 		}   
     	}
     	else{
-    	    char *buf = malloc(sizeof(char)*MAXLINE);
-    	    strcpy(buf, argv[1]); 
-    	    cur_dirent_list(buf,signal); 
+    	    	char *buf = malloc(sizeof(char)*MAXLINE);
+    	        strcpy(buf, argv[1]); 
+    	        cur_dirent_list(buf,signal); 
     	    }
     }
     else if(argc == 3)
@@ -420,6 +429,7 @@ int main (int argc, char *argv[]){
 	}
 	else if(strcmp(argv[1],"-ilR")==0 ||strcmp(argv[1],"-iRl")==0 || strcmp(argv[1],"-Ril")==0 || strcmp(argv[1],"-Rli")==0 || strcmp(argv[1],"-liR")==0 || strcmp(argv[1],"-lRi")==0){
 	   signal = 11; 
+	   reccurFunc(buf,signal);
 	}
 	
 	/*else if (strcmp(buf2,"-li") == 0)
