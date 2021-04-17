@@ -35,7 +35,7 @@ void cur_dirent_list(const char *dir, int signal)
 	char *dir_name = directory->d_name; 
     	if(signal == 0){
 	    printf("%s\n",dir_name);}
-	else if(signal == 1){
+	else if(signal == 1 && dir_name[0]!='.'){
 	    printf("%lu\t%s\n",directory->d_ino, dir_name);
 	    }
 	else if(signal == 2 && dir_name[0]!='.'){
