@@ -33,9 +33,9 @@ void cur_dirent_list(const char *dir, int signal)
     while((directory = readdir(d))!=NULL)
       {  
 	char *dir_name = directory->d_name; 
-    	if(signal == 0){
+    	if(signal == 0 && dir_name[0]!='.'){
 	    printf("%s\n",dir_name);}
-	else if(signal == 1){
+	else if(signal == 1 && dir_name[0]!='.'){
 	    printf("%lu\t%s\n",directory->d_ino, dir_name);
 	    }
 	else if(signal == 2 && dir_name[0]!='.'){
@@ -57,20 +57,14 @@ void cur_dirent_list(const char *dir, int signal)
 }
 void reccurFunc(char *dir, int signal){
     char *buffer = malloc(sizeof(char)*MAXLINE); 
-    /*DIR *d; 
-    struct dirent *directory;
-    d  = opendir(dir); 
-    if(!d){
-        printf("\n");
-    	return; 
-    }*/
+  
 	struct dirent **dirr;
 	int n = scandir(dir,&dirr, NULL, alphasort);
 	if(n<0){perror("scandir");}
 	int i =0;
 	while(i<n){
 	struct dirent *directory = dirr[i]; 
-    //while((directory = readdir(d))!=NULL){
+    
     	if (directory->d_name[0]!='.')
     	{
 			int isDir = 0;
@@ -78,7 +72,7 @@ void reccurFunc(char *dir, int signal){
            {
 			  isDir = 1;
     	   }
-    	   //else{
+    	   
     	      if(signal == 5 || signal == 9){
               printf("%lu\t", directory->d_ino); 
     	      printf("%s\n ", directory->d_name); 
@@ -122,7 +116,7 @@ void reccurFunc(char *dir, int signal){
     	      }
     	   //} 
 	      if(isDir == 1){
-			//printf("%s/%s: ",dir, directory->d_name);
+				printf("%s/%s: ",dir, directory->d_name);
     	   		strcpy(buffer, dir); 
     	   		strcat(buffer, "/"); 
     	   		strcat(buffer,  directory->d_name);
@@ -132,7 +126,7 @@ void reccurFunc(char *dir, int signal){
     	  }	
 		  i++;
      }
-    //closedir(d);
+    
 	free(buffer);
 	free(dirr);
 }
@@ -311,7 +305,22 @@ int checkDash(char *space){
 }
 int main (int argc, char *argv[]){  
     int signal = 0; 
-    if(argc == 1)
+	//For throwing exception
+	/*char*bufParse = malloc(sizeof(char)*MAXLINE); 
+	for (int i = 2; i <= argc; i++)
+	  { 
+	     strcat(strcat(bufParse, " "), argv[i]); 
+	  }
+	char  things[] = "-/~."; 
+	char * exceptionStr = strpbrk(bufParse ,things);
+	if(exceptionStr == NULL)
+	{
+		printf("Exiting the program as user input is incorrect....\n");
+   		exit(0);
+	}*/
+    
+	
+	if(argc == 1)
     {
     	cur_dirent_list(".",signal);
     }
@@ -331,7 +340,10 @@ int main (int argc, char *argv[]){
 		   signal = 6; 
 		   reccurFunc(".", signal);
 		}
-    	}
+    	else{
+			printf("Incorrect option chosen ...\n");
+		}
+		}
     	else if((strlen(argv[1]) == 3 || strlen(argv[1]) == 4) && argv[1][0] =='-'){
     		if(strcmp(argv[1],"-il")==0){
 		   signal = 3;
@@ -352,9 +364,13 @@ int main (int argc, char *argv[]){
 		else if(strcmp(argv[1],"-ilR")==0 ||strcmp(argv[1],"-iRl")==0 || strcmp(argv[1],"-Ril")==0 || strcmp(argv[1],"-Rli")==0 || strcmp(argv[1],"-liR")==0 || strcmp(argv[1],"-lRi")==0){
 		   signal = 8; 
 		   reccurFunc(".", signal);
-		}   
+		
+		}
+		else{
+			printf("Incorrect option chosen ...\n");   
     	}
-    	else{
+    	}
+		else{
     	    	char *buf = malloc(sizeof(char)*MAXLINE);
     	        strcpy(buf, argv[1]); 
     	        cur_dirent_list(buf,signal); 
@@ -362,54 +378,55 @@ int main (int argc, char *argv[]){
     }
     else if(argc == 3)
     {   
-        char*bufParse = malloc(sizeof(char)*MAXLINE); 
+    char*bufParse = malloc(sizeof(char)*MAXLINE); 
 	for (int i = 0; i < argc; i++)
 	  { 
 	     strcat(strcat(bufParse, " "), argv[i]); 
 	  }
+	
 	int dash = checkDash(bufParse); 
-    	char *buf = malloc(sizeof(char)*MAXLINE);
-    	char *buf2 = malloc(sizeof(char)*MAXLINE);
-    	char *buf3;
-    	strcpy(buf2,argv[1]);
-    	strcpy(buf, argv[2]);
-    	buf3 = strchr(buf, '/');
-    	if(dash == 0){     
-    	if (buf3 != NULL){ 
+    char *buf = malloc(sizeof(char)*MAXLINE);
+    char *buf2 = malloc(sizeof(char)*MAXLINE);
+    char *buf3;
+    strcpy(buf2,argv[1]);
+    strcpy(buf, argv[2]);
+    buf3 = strchr(buf, '/');
+    if(dash == 0){     
+    if (buf3 != NULL){ 
     	if (strcmp(buf2,"-i") == 0){
     	   signal =1;
     	   cur_dirent_list(buf, signal);
     	}
     	else if (strcmp(buf2,"-l") == 0)
     	{
-	    signal =2;
-	    pathListing(buf, signal); 
-	}
-	else if (strcmp(buf2, "-R")==0){
-	    signal = 6; 
-	    reccurFunc(buf, signal); 
-	}
-	else if (strcmp(buf2,"-il") == 0 || strcmp(buf2,"-li") == 0)
-	{
-	   signal =3; 
-	   pathListing(buf, signal); 
-	}
-	else if (strcmp(buf2,"-iR")==0 || strcmp(buf2, "-Ri")==0){
-	   signal = 9;
-	   reccurFunc(buf, signal); 
-	}
-	else if(strcmp(buf2,"-lR")==0 || strcmp(buf2, "-Rl")==0){
-	   signal = 10; 
-	   reccurFunc(buf, signal); 
-	}
-	else if(strcmp(argv[1],"-ilR")==0 ||strcmp(argv[1],"-iRl")==0 || strcmp(argv[1],"-Ril")==0 || strcmp(argv[1],"-Rli")==0 || strcmp(argv[1],"-liR")==0 || strcmp(argv[1],"-lRi")==0){
-	   signal = 11; 
-	   reccurFunc(buf,signal);
-	   }
+	    	signal =2;
+	    	pathListing(buf, signal); 
+		}
+		else if (strcmp(buf2, "-R")==0){
+	    	signal = 6; 
+	    	reccurFunc(buf, signal); 
+		}
+		else if (strcmp(buf2,"-il") == 0 || strcmp(buf2,"-li") == 0)
+		{
+	   		signal =3; 
+	   		pathListing(buf, signal); 
+		}
+		else if (strcmp(buf2,"-iR")==0 || strcmp(buf2, "-Ri")==0){
+	   		signal = 9;
+	   		reccurFunc(buf, signal); 
+		}
+		else if(strcmp(buf2,"-lR")==0 || strcmp(buf2, "-Rl")==0){
+	   		signal = 10; 
+	   		reccurFunc(buf, signal); 
+		}
+		else if(strcmp(argv[1],"-ilR")==0 ||strcmp(argv[1],"-iRl")==0 || strcmp(argv[1],"-Ril")==0 || strcmp(argv[1],"-Rli")==0 || strcmp(argv[1],"-liR")==0 || strcmp(argv[1],"-lRi")==0){
+	   		signal = 11; 
+	   		reccurFunc(buf,signal);
+	   	}
 	}
 	
 	else{
-	    if (strcmp(buf2,"-i") == 0){
+	   if (strcmp(buf2,"-i") == 0){
     	   signal =1;
     	   singleNameListing(buf,signal);
     	   }
@@ -424,71 +441,92 @@ int main (int argc, char *argv[]){
 	   singleNameListing(buf,signal); 
 	   }
 	  }
+	 
+	if(argv[1][0] != '-'){
+	  char *buflist = malloc(sizeof(char)*MAXLINE);
+	  for (int i =1; i <argc; i++){
+    	           strcpy(buflist, argv[i]); 
+    	           printf("%s:\n", buflist);
+    	           cur_dirent_list(buflist,signal); 
+    	           printf("\n"); 
+    	        }
+	   }
 	}
 	
 	
 	//option with space
-       else{
+    else{
         char *bufExtract2 = malloc(sizeof(char)*MAXLINE);  
-	bufExtract2 = extractString(bufParse);
-	int signalIRL = irlSignal(bufExtract2);
-         if (signalIRL == 1){
-	   	signal = 8;
-	   	reccurFunc(".", signal); 
-	  }
-	  else if(signalIRL ==2){
-	  	signal = 3;
-	  	cur_dirent_list(".",signal);
-	  }
-	  else if(signalIRL ==3){
-	  	signal = 9;
-	  	reccurFunc(".",signal);
-	  }
-	  else if(signalIRL ==4){
-	  	signal = 10;
-	  	reccurFunc(".",signal);
-	  }
+		bufExtract2 = extractString(bufParse);
+		int signalIRL = irlSignal(bufExtract2);
+        if (signalIRL == 1){
+	   		signal = 8;
+	   		reccurFunc(".", signal); 
+	  	}
+	  	else if(signalIRL ==2){
+	  		signal = 3;
+	  		cur_dirent_list(".",signal);
+	  	}
+	  	else if(signalIRL ==3){
+	  		signal = 9;
+	  		reccurFunc(".",signal);
+	  	}
+	  	else if(signalIRL ==4){
+	  		signal = 10;
+	  		reccurFunc(".",signal);
+	  	}
        }
-      } 
+    } 
       
       
      else if(argc > 3){
+		if (argv[1][0]!='-'){
+		char *buflist = malloc(sizeof(char)*MAXLINE);
+		for(int i = 1; i < argc; i++){
+			strcpy(buflist, argv[i]);
+			printf("%s:\n", buflist);
+			cur_dirent_list(buflist, signal);
+			printf("\n");
+		   }
+	    }
+		else{
     	char*bufParse = malloc(sizeof(char)*MAXLINE); 
-	   for (int i = 0; i < argc; i++)
-	   { 
-	   	strcat(strcat(bufParse, " "), argv[i]); 
-	   }
-           char *bufExtract2 = malloc(sizeof(char)*MAXLINE);  
-	   bufExtract2 = extractString(bufParse);
-	   int signalIRL = irlSignal(bufExtract2);
-	char *buf = malloc(sizeof(char)*MAXLINE);
+	   	for (int i = 0; i < argc; i++)
+	   	{ 
+	   		strcat(strcat(bufParse, " "), argv[i]); 
+	   	}
+    	char *bufExtract2 = malloc(sizeof(char)*MAXLINE);  
+	   	bufExtract2 = extractString(bufParse);
+	   	int signalIRL = irlSignal(bufExtract2);
+		char *buf = malloc(sizeof(char)*MAXLINE);
     	char *buf3;
     	strcpy(buf, argv[argc-1]);
     	buf3 = strchr(buf, '/');
-	if (buf3 != NULL){
-    	 if (signalIRL == 1){
-	   	signal = 8;
-	   	reccurFunc(buf, signal); 
-	  }
-	  else if(signalIRL ==2){
-	  	signal = 3;
-	  	pathListing(buf,signal);
-	  }
-	  else if(signalIRL ==3){
-	  	signal = 9;
-	  	reccurFunc(buf,signal);
-	  }
-	  else if(signalIRL ==4){
-	  	signal = 10;
-	  	reccurFunc(buf,signal);
-	  } 
-	 }
+		if (buf3 != NULL){
+    	 	if (signalIRL == 1){
+	   			signal = 11;
+	   			reccurFunc(buf, signal); 
+	  		}
+	  		else if(signalIRL ==2){
+	  			signal = 3;
+	  			pathListing(buf,signal);
+	  		}
+	  		else if(signalIRL ==3){
+	  			signal = 9;
+	  			reccurFunc(buf,signal);
+	  		}
+	  		else if(signalIRL ==4){
+	  			signal = 10;
+	  			reccurFunc(buf,signal);
+	  		} 
+	 	}
     	else{
-	   if (signalIRL == 1){
-	   	signal = 8;
-	   	reccurFunc(".", signal); 
-	   } 
-         }  
-     }
+	   		if (signalIRL == 1){
+	   			signal = 8;
+	   			reccurFunc(".", signal); 
+	   		} 
+          }
+		}  
+    }
 }               
 
